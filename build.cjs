@@ -8,7 +8,8 @@ html = html.replace(
   () => `<style>\n${read("style.css")}\n</style>`,
 );
 for (const file of ["engine.js", "game.js"]) {
-  const sourceTag = `<script src="${file}"></script>`;
+  const sourceTag = html.match(new RegExp(`<script src="${file.replace('.', '\\.')}(?:\\?[^"<>]*)?"></script>`))?.[0];
+  if (!sourceTag) throw new Error(`Missing source tag: ${file}`);
   if (!html.includes(sourceTag)) throw new Error(`Missing source tag: ${file}`);
   html = html.replace(sourceTag, () => `<script>\n${read(file)}\n</script>`);
 }

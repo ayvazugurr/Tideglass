@@ -26,6 +26,20 @@ function setup(w = 390, h = 844, stored = null, blocked = false) {
   win.requestAnimationFrame = (fn) => frames.push(fn);
   win.Date.now = () => 123456789;
   win.matchMedia = () => ({ matches: false });
+  const audio = { tones: 0, splashes: 0 };
+  const param = () => ({value: 260, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {}, setTargetAtTime() {}});
+  const node = () => ({connect() {}, disconnect() {}, stop() {}});
+  win.AudioContext = class {
+    get currentTime() { return time / 1000; }
+    state = "running";
+    sampleRate = 44100;
+    destination = {};
+    createOscillator() { return {...node(), frequency: param(), start() {audio.tones++;}}; }
+    createGain() { return {...node(), gain: param()}; }
+    createBiquadFilter() { return {...node(), frequency: param()}; }
+    createBuffer(channels, length) { return {getChannelData: () => new Float32Array(length)}; }
+    createBufferSource() { return {...node(), start() {audio.splashes++;}}; }
+  };
   const width = Math.min(w - 66, 384),
     rect = { left: 33, top: 180, width, height: (width * 8) / 6 };
   win.HTMLCanvasElement.prototype.getBoundingClientRect = () => rect;
@@ -94,6 +108,7 @@ function setup(w = 390, h = 844, stored = null, blocked = false) {
   }
   return {
     win,
+    audio,
     doc,
     advance,
     click,
@@ -135,7 +150,7 @@ for (const [width, height] of [
   t.click("back");
   check(t.snap().mode === "play", "back");
   t.click("sound");
-  check(t.snap().saved.mute === false, "mute saved");
+  check(t.snap().saved.mute === true, "mute saved");
   t.click("pause");
   t.click("restart");
   check(
@@ -444,6 +459,30 @@ for (const stored of [
   for (let n = 0; n < 20; n++) t.advance(100);
   check(t.draws() === stopped, "paused repaint stopped");
   t.win.close();
+}
+{
+  const t = setup();
+  t.click("start");
+  const tones = t.audio.tones, splashes = t.audio.splashes;
+  const g = new Game();
+  g.board = t.snap().board;
+  const move = g.findMove();
+  t.play(move);
+  check(t.audio.tones > tones, "chain and clear synth voices");
+  check(t.audio.splashes > splashes, "filtered splash audio produced");
+  for (let i = 0; i < 40; i++) t.advance(20);
+  check(t.draws() > 30, "particle lifetime and glossy render frames");
+  t.click("sound");
+  const muted = t.audio.tones;
+  g.board = t.snap().board;
+  t.play(g.findMove());
+  check(t.audio.tones === muted, "muting suppresses synth voices");
+  t.win.close();
+  const old = setup(390, 844, JSON.stringify({best: 9000, theme: 3, mute: true}));
+  check(old.snap().saved.best === 9000 && old.snap().saved.theme === 3, "old progress retained");
+  old.click("start");
+  check(old.audio.tones === 0, "existing mute preference retained");
+  old.win.close();
 }
 console.log(
   "PASS DOM/event checks:",

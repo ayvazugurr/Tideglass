@@ -1205,7 +1205,7 @@ footer {
     {
       name: "Lagün",
       at: 0,
-      colors: ["#a7dfbf", "#efba79", "#aca7e0", "#79bddd"],
+      colors: ["#52e5b4", "#ffbd62", "#b398ff", "#43c9f3"],
     },
     {
       name: "Günbatımı",
@@ -1237,7 +1237,7 @@ footer {
     bestFlow: 0,
     missions: 0,
     theme: 0,
-    mute: true,
+    mute: false,
   };
   let saved = { ...blank },
     activeRun = null;
@@ -1375,7 +1375,11 @@ footer {
     if (saved.mute) return;
     try {
       ac ??= new (window.AudioContext || window.webkitAudioContext)();
-      if (ac.state === "suspended") ac.resume();
+      if (ac.state === "suspended") ac.resume().catch(() => {});
+      // Limit overlapping voices during fast drag/backtracking gestures.
+      const audioNow = ac.currentTime;
+      if (type === "note" && audioNow - (sound.lastNote ?? -1) < 0.035) return;
+      if (type === "note") sound.lastNote = audioNow;
       const notes =
         type === "clear"
           ? [0, 4, 7, 12]
@@ -1386,17 +1390,36 @@ footer {
         let t = ac.currentTime + i * 0.065,
           o = ac.createOscillator(),
           g = ac.createGain();
-        o.type = type === "bad" ? "triangle" : "sine";
+        o.type = type === "bad" || type === "note" ? "triangle" : "sine";
         o.frequency.value =
           (type === "bad" ? 130 : 260) * 2 ** ((note + n) / 12);
         g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.09, t + 0.008);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 0.19);
+        g.gain.linearRampToValueAtTime(type === "note" ? 0.045 : 0.06, t + 0.008);
+        o.frequency.setTargetAtTime(o.frequency.value * 0.65, t + 0.025, 0.09);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.26);
         o.connect(g);
         g.connect(ac.destination);
         o.start(t);
-        o.stop(t + 0.21);
+        o.stop(t + 0.28);
+        o.onended = () => { o.disconnect(); g.disconnect(); };
       });
+      if (type === "clear" || type === "pulse") {
+        // Soft underwater impact plus a filtered, airy splash. No audio assets.
+        const duration = type === "pulse" ? 0.4 : 0.23;
+        const buffer = ac.createBuffer(1, Math.ceil(ac.sampleRate * duration), ac.sampleRate);
+        const samples = buffer.getChannelData(0);
+        for (let i = 0; i < samples.length; i++) samples[i] = (Math.random() * 2 - 1) * (1 - i / samples.length) ** 2;
+        const noise = ac.createBufferSource(), filter = ac.createBiquadFilter(), gain = ac.createGain();
+        noise.buffer = buffer;
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(2400, audioNow);
+        filter.frequency.exponentialRampToValueAtTime(250, audioNow + duration);
+        gain.gain.setValueAtTime(0.16, audioNow);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioNow + duration);
+        noise.connect(filter); filter.connect(gain); gain.connect(ac.destination);
+        noise.start();
+        noise.onended = () => { noise.disconnect(); filter.disconnect(); gain.disconnect(); };
+      }
     } catch {}
   }
   function toast(text) {
@@ -1421,6 +1444,7 @@ footer {
     document.querySelector(".pulse-fill").style.width =
       (game.charge / 18) * 100 + "%";
     $("sound").style.opacity = saved.mute ? 0.5 : 1;
+    $("sound").textContent = saved.mute ? "♪ ×" : "♪";
     $("sound").setAttribute(
       "aria-label",
       saved.mute ? "Sesi aç" : "Sesi kapat",
@@ -1663,15 +1687,17 @@ footer {
         x: ((g.i % 6) + 0.5) * cell,
         y: (Math.floor(g.i / 6) + 0.5) * cell,
       };
-      for (let j = 0; j < 8; j++)
+      particles.push({x: pos.x, y: pos.y, vx: 0, vy: 0, life: 0.32, maxLife: 0.32, color: "#d0fff5", r: cell * 0.12, ring: true});
+      for (let j = 0; j < 12; j++)
         particles.push({
           x: pos.x,
           y: pos.y,
-          vx: (Math.random() - 0.5) * 170,
-          vy: (Math.random() - 0.6) * 170,
+          vx: Math.cos(j * Math.PI / 6) * (60 + Math.random() * 90),
+          vy: Math.sin(j * Math.PI / 6) * (60 + Math.random() * 90) - 35,
           life: 0.55 + Math.random() * 0.2,
           color: g.color < 0 ? "#809094" : themes[saved.theme].colors[g.color],
-          r: 2 + Math.random() * 2,
+          r: 2 + Math.random() * 3,
+          shard: j % 3 === 0,
         });
     }
     if (particles.length > 400) particles = particles.slice(-400);
@@ -2026,7 +2052,9 @@ footer {
           : hinted
             ? 1 + Math.sin(motionNow * 0.005) * (reducedMotion ? 0 : 0.05)
             : 1;
-      const s = cell * 0.69 * scale;
+      p.scale ??= 1;
+      p.scale += (scale - p.scale) * (reducedMotion ? 1 : 1 - Math.exp(-22 * dt));
+      const s = cell * 0.69 * p.scale;
       ctx.save();
       ctx.translate(p.x, p.y);
       if (g.color < 0) {
@@ -2054,17 +2082,35 @@ footer {
         ctx.fill();
       } else {
         const c = themes[saved.theme].colors[g.color];
-        ctx.fillStyle = "#031a2688";
+        ctx.fillStyle = "#00131cb0";
+        rounded(-s / 2 - 1, -s / 2 + 8, s + 2, s, 12);
+        ctx.fill();
+        ctx.fillStyle = c;
         rounded(-s / 2, -s / 2 + 5, s, s, 12);
         ctx.fill();
+        ctx.fillStyle = "#002c4270";
+        ctx.fill();
         let gr = ctx.createLinearGradient(0, -s / 2, 0, s / 2);
-        gr.addColorStop(0, c);
-        gr.addColorStop(1, c + "bc");
+        gr.addColorStop(0, "#edfff8");
+        gr.addColorStop(0.16, c);
+        gr.addColorStop(0.72, c);
+        gr.addColorStop(1, "#28798c");
         ctx.fillStyle = gr;
         rounded(-s / 2, -s / 2, s, s, 12);
         ctx.fill();
         ctx.strokeStyle = selected || loopTarget ? "#f6ffeb" : "#ffffff55";
         ctx.lineWidth = selected || loopTarget ? 2.5 : 1;
+        ctx.stroke();
+        const gloss = ctx.createLinearGradient(-s / 2, -s / 2, s / 3, s / 3);
+        gloss.addColorStop(0, "#ffffff80");
+        gloss.addColorStop(0.55, "#ffffff08");
+        gloss.addColorStop(1, "#ffffff00");
+        ctx.fillStyle = gloss;
+        rounded(-s / 2 + 3, -s / 2 + 3, s - 6, s * 0.44, 9);
+        ctx.fill();
+        ctx.strokeStyle = "#ffffff55";
+        ctx.lineWidth = 1;
+        rounded(-s / 2 + 3, -s / 2 + 3, s - 6, s - 6, 10);
         ctx.stroke();
         ctx.strokeStyle = "#163e48cc";
         ctx.lineWidth = 2;
@@ -2113,12 +2159,25 @@ footer {
       p.life -= dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.vy += 180 * dt;
-      ctx.globalAlpha = Math.min(1, p.life * 2);
+      if (!p.ring) p.vy += 180 * dt;
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life * (p.ring ? 3 : 2)));
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, 7);
-      ctx.fill();
+      if (p.ring) {
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 1.5;
+        ctx.arc(p.x, p.y, p.r + (1 - p.life / p.maxLife) * cell * 0.42, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (p.shard) {
+        ctx.moveTo(p.x, p.y - p.r);
+        ctx.lineTo(p.x + p.r, p.y);
+        ctx.lineTo(p.x, p.y + p.r);
+        ctx.lineTo(p.x - p.r, p.y);
+        ctx.closePath(); ctx.fill();
+      } else {
+        ctx.arc(p.x, p.y, p.r, 0, 7);
+        ctx.fill();
+      }
     }
     ctx.globalAlpha = 1;
   }
