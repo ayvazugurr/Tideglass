@@ -343,7 +343,9 @@
       this.turn++;
       this.total += targets.length;
       this.longest = Math.max(this.longest, path.length);
-      this.charge = Math.min(18, this.charge + targets.length);
+      // Dalgakıran güçlü bir kaçış kartı; dolumu zincir uzunluğunun yaklaşık yarısına
+      // indirerek oyuncuyu her hamlede değil, doğru anda kullanmaya zorlarız.
+      this.charge = Math.min(18, this.charge + Math.max(1, Math.floor(targets.length * 0.55)));
       this.score += points;
       this.gravity();
       const held = path.length >= 6 || loop;
