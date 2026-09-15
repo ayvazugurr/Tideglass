@@ -1,0 +1,16 @@
+{
+  "name": "tideglass",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Standalone chain puzzle game; dependencies are for tests only.",
+  "scripts": {
+    "build": "node build.cjs",
+    "test": "node test-engine.cjs && node test-ui.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "30.0.1"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#081d27" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="TIDEGLASS" />
+    <title>TIDEGLASS — Bir dalga daha</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="ambience" aria-hidden="true"></div>
+    <main class="shell">
+      <header>
+        <a class="brand" href="#" aria-label="Tideglass ana menü"
+          >TIDE<span>GLASS</span><small>BİR DALGA DAHA</small></a
+        >
+        <div class="top-actions">
+          <button id="sound" class="icon" aria-label="Sesi aç">♪</button
+          ><button id="pause" class="icon" aria-label="Oyunu duraklat">
+            Ⅱ
+          </button>
+        </div>
+      </header>
+      <section class="stats">
+        <div><small>PUAN</small><strong id="score">0</strong></div>
+        <div class="stage">
+          <small>BÖLGE</small><strong id="level">01</strong>
+        </div>
+        <div class="right">
+          <small>REKOR</small><strong id="best">0</strong>
+        </div>
+      </section>
+      <div class="status">
+        <span id="status">Aynı renkten en az 3 kristali birleştir.</span
+        ><span id="turn">0 HAMLE</span>
+      </div>
+      <div class="board-wrap">
+        <canvas
+          id="board"
+          aria-label="Kristal oyun alanı. Aynı renkte en az üç komşu kristali birleştir. Klavyede oklar, boşluk ve Enter."
+          tabindex="0"
+        ></canvas>
+        <div id="float" aria-live="polite"></div>
+        <div id="sea-level" class="sea-label">DALGA 3 / 8</div>
+      </div>
+      <div class="chain-line">
+        <span id="chain">Çapraz da birleştirebilirsin.</span
+        ><strong id="gain">6+ = DALGA DURUR</strong>
+      </div>
+      <button id="pulse" class="pulse" disabled>
+        <span class="pulse-fill"></span
+        ><span class="pulse-label"
+          >◈ &nbsp; DALGAKIRAN <small id="charge">0 / 18</small></span
+        >
+      </button>
+      <div class="bottom">
+        <span id="mission">HEDEF · Tek zincirde 8 kristal</span
+        ><button id="help">Nasıl oynanır?</button>
+      </div>
+      <footer>SÜRÜKLE · BİRLEŞTİR · DALGAYI DURDUR</footer>
+    </main>
+    <div id="overlay" class="overlay">
+      <section
+        id="panel"
+        class="panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="panel-title"
+      ></section>
+    </div>
+    <script src="engine.js"></script>
+    <script src="game.js"></script>
+  </body>
+</html>
