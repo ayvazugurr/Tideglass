@@ -19,6 +19,16 @@
       at: 4500,
       colors: ["#a7e8db", "#e3deba", "#b8b4ee", "#7eaed8"],
     },
+    {
+      name: "Mercan Resifi",
+      at: 8000,
+      colors: ["#ff9f9a", "#ffd27d", "#8ed8cf", "#75b8ee"],
+    },
+    {
+      name: "Derin Mavi",
+      at: 14000,
+      colors: ["#76d4d8", "#7fa9ee", "#b6a3f0", "#f0b58e"],
+    },
   ];
   const blank = {
     best: 0,
@@ -85,7 +95,6 @@
     particles = [],
     positions = new Map(),
     hint = null,
-    hintAt = 0,
     lastInput = performance.now(),
     animTime = 0,
     shake = 0,
@@ -269,6 +278,19 @@
   function show(html) {
     document.querySelector(".shell").inert = true;
     $("panel").innerHTML = html;
+    if (mode === "menu" && !$("patch-check")) {
+      const patchButton = document.createElement("button");
+      patchButton.id = "patch-check";
+      patchButton.className = "secondary patch-button";
+      patchButton.textContent = "YAMAYI KONTROL ET ↻";
+      $("panel").appendChild(patchButton);
+      patchButton.onclick = () => {
+        patchButton.textContent = "YAMA KONTROL EDİLİYOR…";
+        setTimeout(() => {
+          location.href = `${location.pathname}?patch=${Date.now()}${location.hash}`;
+        }, 220);
+      };
+    }
     $("overlay").classList.remove("hidden");
     setTimeout(() => $("panel").querySelector(".primary")?.focus(), 20);
     hud();
@@ -311,6 +333,15 @@
     };
     if ($("continue-run")) $("continue-run").onclick = continueRun;
     $("journal").onclick = journal;
+    const patchButton = $("patch-check");
+    if (patchButton)
+      patchButton.onclick = () => {
+        patchButton.textContent = "YAMA KONTROL EDİLİYOR…";
+        // Cache-busting query yenilemeyi zorlar; localStorage ilerlemesi korunur.
+        setTimeout(() => {
+          location.href = `${location.pathname}?patch=${Date.now()}${location.hash}`;
+        }, 220);
+      };
     document.querySelectorAll("[data-theme]").forEach(
       (b) =>
         (b.onclick = () => {
@@ -650,7 +681,6 @@
         if (e.key === "ArrowDown") y = Math.min(7, y + 1);
         hover = y * 6 + x;
         canvas.focus({ preventScroll: true });
-        hintAt = performance.now() + 3000;
       }
       if (pointer !== null && [" ", "Enter", "e", "E"].includes(e.key)) return;
       if (e.key === " ") add(hover);
@@ -802,16 +832,28 @@
       ctx.save();
       ctx.translate(p.x, p.y);
       if (g.color < 0) {
-        ctx.fillStyle = "#42606a";
+        // Kaya engeli: kristallerden net biçimde ayrılan çokgen kaya gövdesi.
+        const rock = ctx.createLinearGradient(0, -s / 2, 0, s / 2);
+        rock.addColorStop(0, "#78939a");
+        rock.addColorStop(0.45, "#536f79");
+        rock.addColorStop(1, "#304d59");
+        ctx.fillStyle = rock;
         rounded(-s / 2, -s / 2, s, s, 8);
         ctx.fill();
-        ctx.strokeStyle = "#8ea0a6";
-        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = "#b6d0d0";
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(-s * 0.15, -s * 0.3);
-        ctx.lineTo(s * 0.1, 0);
-        ctx.lineTo(-s * 0.1, s * 0.3);
+        ctx.moveTo(-s * 0.18, -s * 0.28);
+        ctx.lineTo(-s * 0.02, -s * 0.08);
+        ctx.lineTo(-s * 0.13, s * 0.18);
+        ctx.moveTo(s * 0.08, -s * 0.22);
+        ctx.lineTo(-s * 0.02, -s * 0.08);
+        ctx.lineTo(s * 0.19, s * 0.19);
         ctx.stroke();
+        ctx.fillStyle = "#d9eeeeaa";
+        ctx.beginPath();
+        ctx.arc(-s * 0.22, -s * 0.22, s * 0.045, 0, 7);
+        ctx.fill();
       } else {
         const c = themes[saved.theme].colors[g.color];
         ctx.fillStyle = "#031a2688";
@@ -868,18 +910,6 @@
         ctx.fill();
       }
     }
-    if (now < hintAt && mode === "play") {
-      ctx.strokeStyle = "#fff8ca";
-      ctx.lineWidth = 2;
-      rounded(
-        (hover % 6) * cell + 2,
-        Math.floor(hover / 6) * cell + 2,
-        cell - 4,
-        cell - 4,
-        12,
-      );
-      ctx.stroke();
-    }
     particles = particles.filter((p) => p.life > 0);
     for (const p of particles) {
       p.life -= dt;
@@ -893,8 +923,6 @@
       ctx.fill();
     }
     ctx.globalAlpha = 1;
-    if (mode === "play" && !path.length && now - lastInput > 6500 && !hint)
-      hint = (game.turn >= 2 ? game.findLoop(9) : null) || game.findMove();
   }
   resize();
   hud();
