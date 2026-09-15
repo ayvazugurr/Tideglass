@@ -14,7 +14,7 @@ Kaynak sürümü için dosyaları birlikte tut ve `index.html` dosyasını aç. 
 
 - Aynı renkten en az üç komşu kristali basılı tutup sürükleyerek birleştir. Çapraz bağlantılar geçerlidir.
 - Bırakınca zincir toplanır. Önceki kristale geri dönerek son seçimi geri alabilirsin.
-- 3–5 kristal toplamak bir dalga getirir. 6+ kristal dalgayı durdurur.
+- Başlangıçta 3–5 kristal toplamak bir dalga getirir; 6+ kristal dalgayı durdurur. Beşinci bölgede fırtına başlar ve durdurma eşiği 7 olur.
 - En az beş kristallik zincirin başlangıcına geri dönmek bir halka oluşturur. O rengin bütün kristalleri temizlenir, dalga durur.
 - Ardışık 5+ zincirler Akıntı çarpanını yükseltir: 1,25 → 1,50 → 1,75 → 2. Kısa zincir çarpanı sıfırlar.
 - 18 kristal toplayınca Dalgakıran dolar; alt sıraları temizlemek için düğmeye bas. Gücü hemen kullanman gerekmez.

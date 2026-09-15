@@ -125,8 +125,13 @@
     get level() {
       return 1 + Math.floor(this.turn / 7);
     }
+    get holdTarget() {
+      return this.level >= 5 ? 7 : 6;
+    }
     gem() {
-      const color = Math.floor(this.random() * (this.level < 3 ? 3 : 4));
+      // Four colors from the opening prevent oversized diagonal clusters from
+      // dominating while still guaranteeing a rescue move when needed.
+      const color = Math.floor(this.random() * 4);
       return { id: ++this.id, color, star: this.random() < 0.09 };
     }
     adjacent(a, b) {
@@ -279,7 +284,7 @@
     willOverflow(path, loop = false) {
       if (
         !this.valid(path) ||
-        path.length >= 6 ||
+        path.length >= this.holdTarget ||
         (loop && this.loopValid(path))
       )
         return false;
@@ -305,7 +310,10 @@
       }
       for (let i = 0; i < 42; i++) this.board[i] = this.board[i + 6];
       for (let i = 42; i < 48; i++) this.board[i] = this.gem();
-      if (this.level >= 4 && this.turn % 3 === 0)
+      if (
+        this.level >= 3 &&
+        this.turn % (this.level >= 5 ? 2 : 3) === 0
+      )
         this.board[42 + Math.floor(this.random() * 6)] = {
           id: ++this.id,
           color: -1,
@@ -348,7 +356,7 @@
       this.charge = Math.min(18, this.charge + Math.max(1, Math.floor(targets.length * 0.55)));
       this.score += points;
       this.gravity();
-      const held = path.length >= 6 || loop;
+      const held = path.length >= this.holdTarget || loop;
       if (held) this.holds++;
       let rose = false;
       if (!held) rose = this.rise();

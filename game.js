@@ -268,16 +268,16 @@
       " / 8";
     $("status").textContent = danger
       ? "TAVAN DOLU · Önce yer aç veya dalgayı durdur."
-      : game.turn >= 2 &&
+      : game.level >= 5
+        ? "FIRTINA · 7+ zincir dalgayı durdurur."
+        : game.turn >= 2 &&
           game.turn <= 6 &&
           saved.loops === 0 &&
           game.loops === 0
         ? "İPUCU · 5+ zincirle başlangıca dön, halkayı kapat."
-        : game.level >= 4
+        : game.level >= 3
           ? "Kayaları yanlarından zincir yaparak kır."
-          : game.level >= 3
-            ? "Yeni renk geldi. Sembollere de bakabilirsin."
-            : "Aynı renkten en az 3 kristali birleştir.";
+          : "Aynı renkten en az 3 kristali birleştir.";
     $("mission").textContent = missionDone
       ? "HEDEF TAMAMLANDI · +300 ✓"
       : "SEFER HEDEFİ · " + mission.text;
@@ -300,10 +300,10 @@
             ? " · TAŞAR!"
             : looped
               ? " · TAM TEMİZLİK"
-              : path.length >= 6
+              : path.length >= game.holdTarget
                 ? " · DALGA DURUR"
                 : " · DALGA +1")
-        : "6+ = DALGA DURUR";
+        : `${game.holdTarget}+ = DALGA DURUR`;
   }
   function show(html) {
     document.querySelector(".shell").inert = true;
@@ -463,7 +463,7 @@
     looped = false;
     pointer = null;
     show(
-      `<p class="eyebrow">İLK ZİNCİRİN YETER</p><h2 id="panel-title">Akıntının kuralları</h2><ol class="rules"><li><b>Sürükle:</b> aynı renkli 3 veya daha fazla komşu kristali birleştir. Çapraz geçebilirsin. Son kristale geri dönerek zinciri kısalt.</li><li><b>Dalgayı yönet:</b> 3–5 kristalde alttan bir sıra gelir. 6+ kristalde dalga durur. Dolu tavanın üstüne yeni dalga gelirse sefer biter.</li><li><b>Dalgakıran:</b> 18 kristal toplayınca düğmeye bas; en alttaki dolu sıraları temizle. Kayalara komşu zincirler kayaları kırar.</li><li><b>Halka:</b> En az 5 kristalle başladığın noktaya dön; o rengin alandaki tamamını temizle.</li><li><b>Akıntı:</b> Arka arkaya 5+ kristallik zincirler puan çarpanını yükseltir. Kısa zincir akıntıyı sıfırlar.</li><li><b>Yıldızlar:</b> zincirdeki her yıldız +60 puan. Uzun zincirlerin bonusu hızla artar.</li></ol><p class="fine">Fare / dokunmatik: basılı tut ve sürükle.<br>Klavye: oklarla gez, Boşluk ile ekle, Enter ile topla.<br>Esc: zinciri iptal et / duraklat. E: dalgakıran.</p><button class="primary" id="back">ANLADIM</button>`,
+      `<p class="eyebrow">İLK ZİNCİRİN YETER</p><h2 id="panel-title">Akıntının kuralları</h2><ol class="rules"><li><b>Sürükle:</b> aynı renkli 3 veya daha fazla komşu kristali birleştir. Çapraz geçebilirsin. Son kristale geri dönerek zinciri kısalt.</li><li><b>Dalgayı yönet:</b> Başlangıçta 3–5 kristal yeni dalga getirir, 6+ dalgayı durdurur. Beşinci bölgede fırtına başlar ve eşik 7 olur.</li><li><b>Dalgakıran:</b> 18 kristal toplayınca düğmeye bas; en alttaki dolu sıraları temizle. Kayalara komşu zincirler kayaları kırar.</li><li><b>Halka:</b> En az 5 kristalle başladığın noktaya dön; o rengin alandaki tamamını temizle.</li><li><b>Akıntı:</b> Arka arkaya 5+ kristallik zincirler puan çarpanını yükseltir. Kısa zincir akıntıyı sıfırlar.</li><li><b>Yıldızlar:</b> zincirdeki her yıldız +60 puan. Uzun zincirlerin bonusu hızla artar.</li></ol><p class="fine">Fare / dokunmatik: basılı tut ve sürükle.<br>Klavye: oklarla gez, Boşluk ile ekle, Enter ile topla.<br>Esc: zinciri iptal et / duraklat. E: dalgakıran.</p><button class="primary" id="back">ANLADIM</button>`,
     );
     $("back").onclick = () => {
       if (previous === "play") close();

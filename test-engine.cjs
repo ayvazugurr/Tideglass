@@ -213,3 +213,37 @@ console.log("PASS reload state, future randomness, invalid snapshot rejection");
   assert.equal(g.over, true);
 }
 console.log("PASS overflow preview");
+
+// Balance regression: the opening uses four colors so diagonal chains do not
+// make nearly every board an immediate six-clear. The deterministic sample
+// keeps the opening accessible without returning to the previous 69% rate.
+{
+  let sixReady = 0;
+  for (let seed = 1; seed <= 100; seed++) {
+    const g = new Game(seed);
+    if (paths(g, 8).length >= 6) sixReady++;
+  }
+  assert.ok(sixReady >= 25 && sixReady <= 48, `opening six-rate ${sixReady}%`);
+}
+// The storm phase raises the hold target after the player has learned the loop.
+{
+  const six = new Game(501);
+  six.turn = 28;
+  six.board = Array(48).fill(null);
+  for (let i = 42; i < 48; i++)
+    six.board[i] = { id: ++six.id, color: 0, star: false };
+  const sixResult = six.commit([42, 43, 44, 45, 46, 47]);
+  assert.equal(six.holdTarget, 7);
+  assert.equal(sixResult.held, false);
+  assert.equal(sixResult.rose, true);
+
+  const seven = new Game(502);
+  seven.turn = 28;
+  seven.board = Array(48).fill(null);
+  for (const i of [41, 42, 43, 44, 45, 46, 47])
+    seven.board[i] = { id: ++seven.id, color: 0, star: false };
+  const sevenResult = seven.commit([42, 43, 44, 45, 46, 47, 41]);
+  assert.equal(sevenResult.held, true);
+  assert.equal(sevenResult.rose, false);
+}
+console.log("PASS opening variety and storm hold threshold");
