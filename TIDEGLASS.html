@@ -86,6 +86,12 @@ button:active:not(:disabled) {
   margin: auto;
 }
 header {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 10;
+  padding: 10px 0;
+  background: #081d27f5;
+  box-shadow: 0 8px 18px #081d2770;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -120,6 +126,14 @@ header {
   width: 44px;
   height: 44px;
   font-size: 21px;
+}
+.sound-test {
+  min-height: 48px;
+  width: 100%;
+  border-radius: 14px;
+  background: #1c4c58;
+  margin-top: 10px;
+  padding: 12px;
 }
 .stats {
   display: grid;
@@ -1371,11 +1385,15 @@ footer {
     const pattern = kind === "loop" ? [8, 35, 18] : kind === "pulse" ? [16, 35, 28] : kind === "bad" ? [25, 40, 25] : [6];
     try { navigator.vibrate(pattern); } catch {}
   }
-  function sound(type, n = 0) {
+  async function sound(type, n = 0) {
     if (saved.mute) return;
     try {
+      // Ask supporting iOS browsers to use media playback rather than ambient audio.
+      try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
       ac ??= new (window.AudioContext || window.webkitAudioContext)();
-      if (ac.state === "suspended") ac.resume().catch(() => {});
+      if (ac.state !== "running") await ac.resume();
+      if (saved.mute) return;
+      if (ac.state !== "running") throw new Error("Audio suspended");
       // Limit overlapping voices during fast drag/backtracking gestures.
       const audioNow = ac.currentTime;
       if (type === "note" && audioNow - (sound.lastNote ?? -1) < 0.035) return;
@@ -1420,7 +1438,9 @@ footer {
         noise.start();
         noise.onended = () => { noise.disconnect(); filter.disconnect(); gain.disconnect(); };
       }
-    } catch {}
+    } catch {
+      toast("Ses başlatılamadı · ♪ düğmesine tekrar dokun.");
+    }
   }
   function toast(text) {
     $("float").textContent = text;
@@ -1500,6 +1520,19 @@ footer {
   function show(html) {
     document.querySelector(".shell").inert = true;
     $("panel").innerHTML = html;
+    if (mode === "menu" || mode === "pause") {
+      const test = document.createElement("button");
+      test.className = "sound-test";
+      test.id = "sound-test";
+      test.textContent = "♪ SESİ AÇ VE DENE";
+      test.onclick = () => {
+        saved.mute = false;
+        save(); hud();
+        sound("clear");
+        test.textContent = "♪ Ses açık · duymuyorsan medya sesini yükselt";
+      };
+      $("panel").appendChild(test);
+    }
     if (mode === "menu" && !$("patch-check")) {
       const patchButton = document.createElement("button");
       patchButton.id = "patch-check";
@@ -1681,23 +1714,30 @@ footer {
     haptic("bad");
   }
   function burst(removed) {
-    if (reducedMotion) return;
-    for (const g of removed) {
+    for (const [order, g] of removed.entries()) {
       const pos = positions.get(g.id) || {
         x: ((g.i % 6) + 0.5) * cell,
         y: (Math.floor(g.i / 6) + 0.5) * cell,
       };
-      particles.push({x: pos.x, y: pos.y, vx: 0, vy: 0, life: 0.32, maxLife: 0.32, color: "#d0fff5", r: cell * 0.12, ring: true});
-      for (let j = 0; j < 12; j++)
+      const color = g.color < 0 ? "#8faeb9" : themes[saved.theme].colors[g.color];
+      const delay = reducedMotion ? 0 : Math.min(order * 0.018, 0.18);
+      // The original crystal briefly contracts into a flash before fragments emerge.
+      particles.push({x: pos.x, y: pos.y, vx: 0, vy: 0, life: 0.22, maxLife: 0.22, color, r: cell * 0.34, crystal: true, delay});
+      if (reducedMotion) continue;
+      particles.push({x: pos.x, y: pos.y, vx: 0, vy: 0, life: 0.4, maxLife: 0.4, color: "#c3fff0", r: cell * 0.08, ring: true, delay});
+      for (let j = 0; j < 7; j++)
         particles.push({
           x: pos.x,
           y: pos.y,
-          vx: Math.cos(j * Math.PI / 6) * (60 + Math.random() * 90),
-          vy: Math.sin(j * Math.PI / 6) * (60 + Math.random() * 90) - 35,
-          life: 0.55 + Math.random() * 0.2,
-          color: g.color < 0 ? "#809094" : themes[saved.theme].colors[g.color],
-          r: 2 + Math.random() * 3,
-          shard: j % 3 === 0,
+          vx: Math.cos(j * Math.PI * 2 / 7 + order) * cell * (1 + Math.random()),
+          vy: Math.sin(j * Math.PI * 2 / 7 + order) * cell * (1 + Math.random()) - cell,
+          life: 0.5 + Math.random() * 0.2,
+          color: j % 3 === 0 ? "#edfff5" : color,
+          r: cell * (0.025 + Math.random() * 0.035),
+          shard: j % 3 !== 0,
+          angle: Math.random() * 6,
+          spin: (Math.random() - 0.5) * 9,
+          delay,
         });
     }
     if (particles.length > 400) particles = particles.slice(-400);
@@ -2156,24 +2196,41 @@ footer {
     }
     particles = particles.filter((p) => p.life > 0);
     for (const p of particles) {
+      if (p.delay > 0) { p.delay -= dt; continue; }
       p.life -= dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      if (!p.ring) p.vy += 180 * dt;
+      if (!p.ring && !p.crystal) {
+        p.vy += cell * 2 * dt;
+        p.vx *= Math.exp(-2.5 * dt);
+      }
       ctx.globalAlpha = Math.max(0, Math.min(1, p.life * (p.ring ? 3 : 2)));
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      if (p.ring) {
+      if (p.crystal) {
+        const progress = Math.max(0, p.life / p.maxLife);
+        const size = p.r * (reducedMotion ? 1 : 0.15 + progress * 0.85);
+        ctx.globalAlpha = progress;
+        rounded(p.x - size, p.y - size, size * 2, size * 2, size * 0.35);
+        ctx.fill();
+        ctx.strokeStyle = "#f3fff8"; ctx.lineWidth = 2; ctx.stroke();
+      } else if (p.ring) {
         ctx.strokeStyle = p.color;
         ctx.lineWidth = 1.5;
         ctx.arc(p.x, p.y, p.r + (1 - p.life / p.maxLife) * cell * 0.42, 0, Math.PI * 2);
         ctx.stroke();
       } else if (p.shard) {
-        ctx.moveTo(p.x, p.y - p.r);
-        ctx.lineTo(p.x + p.r, p.y);
-        ctx.lineTo(p.x, p.y + p.r);
-        ctx.lineTo(p.x - p.r, p.y);
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        p.angle += p.spin * dt;
+        ctx.rotate(p.angle);
+        ctx.moveTo(0, -p.r * 1.5);
+        ctx.lineTo(p.r, 0);
+        ctx.lineTo(0, p.r);
+        ctx.lineTo(-p.r, 0);
         ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = "#ffffff90"; ctx.lineWidth = 0.65; ctx.stroke();
+        ctx.restore();
       } else {
         ctx.arc(p.x, p.y, p.r, 0, 7);
         ctx.fill();

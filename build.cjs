@@ -4,7 +4,7 @@ const path = require("node:path");
 const read = (name) => fs.readFileSync(path.join(__dirname, name), "utf8");
 let html = read("index.html");
 html = html.replace(
-  /<link\s+rel="stylesheet"\s+href="style.css"\s*\/?>/,
+  /<link\s+rel="stylesheet"\s+href="style.css(?:\?[^"<>]*)?"\s*\/?>/,
   () => `<style>\n${read("style.css")}\n</style>`,
 );
 for (const file of ["engine.js", "game.js"]) {

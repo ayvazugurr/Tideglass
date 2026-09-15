@@ -69,6 +69,12 @@ button:active:not(:disabled) {
   margin: auto;
 }
 header {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 10;
+  padding: 10px 0;
+  background: #081d27f5;
+  box-shadow: 0 8px 18px #081d2770;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -103,6 +109,14 @@ header {
   width: 44px;
   height: 44px;
   font-size: 21px;
+}
+.sound-test {
+  min-height: 48px;
+  width: 100%;
+  border-radius: 14px;
+  background: #1c4c58;
+  margin-top: 10px;
+  padding: 12px;
 }
 .stats {
   display: grid;

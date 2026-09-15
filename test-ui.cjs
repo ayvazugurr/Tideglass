@@ -480,9 +480,19 @@ for (const stored of [
   t.win.close();
   const old = setup(390, 844, JSON.stringify({best: 9000, theme: 3, mute: true}));
   check(old.snap().saved.best === 9000 && old.snap().saved.theme === 3, "old progress retained");
+  old.click("sound-test");
+  check(old.audio.splashes > 0 && !old.snap().saved.mute, "explicit sound test unlocks saved mute");
   old.click("start");
-  check(old.audio.tones === 0, "existing mute preference retained");
+  old.click("sound");
+  const silentTones = old.audio.tones;
+  old.click("pause");
+  old.click("restart");
+  check(old.audio.tones === silentTones, "mute preserved during restart");
   old.win.close();
+  const mutedOld = setup(390, 844, JSON.stringify({mute: true}));
+  mutedOld.click("start");
+  check(mutedOld.audio.tones === 0, "existing mute preference retained");
+  mutedOld.win.close();
 }
 console.log(
   "PASS DOM/event checks:",
