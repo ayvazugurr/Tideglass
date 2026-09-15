@@ -13,6 +13,13 @@ for (const file of ["engine.js", "game.js"]) {
   if (!html.includes(sourceTag)) throw new Error(`Missing source tag: ${file}`);
   html = html.replace(sourceTag, () => `<script>\n${read(file)}\n</script>`);
 }
+const cover = fs
+  .readFileSync(path.join(__dirname, "assets", "tideglass-cover-v1.webp"))
+  .toString("base64");
+html = html.replaceAll(
+  "assets/tideglass-cover-v1.webp",
+  `data:image/webp;base64,${cover}`,
+);
 if (html.includes("script src=") || html.includes('href="style.css"'))
   throw new Error("Incomplete standalone build");
 fs.writeFileSync(path.join(__dirname, "TIDEGLASS.html"), html);
