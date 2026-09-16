@@ -20,6 +20,13 @@ html = html.replaceAll(
   "assets/tideglass-cover-v1.webp",
   `data:image/webp;base64,${cover}`,
 );
+const appIcon = fs
+  .readFileSync(path.join(__dirname, "assets", "tideglass-app-icon-512.png"))
+  .toString("base64");
+html = html.replaceAll(
+  "assets/tideglass-app-icon-512.png",
+  `data:image/png;base64,${appIcon}`,
+);
 if (html.includes("script src=") || html.includes('href="style.css"'))
   throw new Error("Incomplete standalone build");
 fs.writeFileSync(path.join(__dirname, "TIDEGLASS.html"), html);
