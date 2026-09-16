@@ -310,69 +310,6 @@ footer {
   text-align: center;
   scrollbar-width: thin;
 }
-.cover-art {
-  position: relative;
-  height: clamp(245px, 46dvh, 360px);
-  margin: -18px -18px 18px;
-  overflow: hidden;
-  border: 1px solid #8edbd266;
-  border-radius: 20px;
-  background: #061720;
-  box-shadow:
-    0 18px 42px #00141faa,
-    inset 0 0 0 1px #d6fff21a;
-}
-.cover-art::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, #03131dcc 0%, transparent 29%),
-    linear-gradient(0deg, #071c25c7 0%, transparent 45%);
-  pointer-events: none;
-}
-.cover-art img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 48%;
-  display: block;
-  filter: saturate(1.08) contrast(1.04);
-  transform: scale(1.01);
-}
-.cover-copy {
-  position: absolute;
-  inset: 19px 16px auto;
-  z-index: 1;
-  color: #ecfffb;
-  text-shadow: 0 3px 18px #001219;
-}
-.cover-copy .eyebrow {
-  margin-bottom: 7px;
-  color: #bdebe1;
-  font-size: 8px;
-}
-.cover-copy h1 {
-  margin: 0;
-  font-size: clamp(31px, 9vw, 43px);
-  font-weight: 760;
-  letter-spacing: 1px;
-  line-height: 0.95;
-}
-.cover-copy h1 span {
-  font-weight: 300;
-}
-.cover-copy h1 small {
-  display: block;
-  margin-top: 10px;
-  color: #d2eee7;
-  font-size: 8px;
-  font-weight: 600;
-  letter-spacing: 4px;
-}
-.panel .cover-lead {
-  margin: 0 2px 12px;
-}
 .eyebrow {
   font-size: 9px;
   line-height: 1.6;
@@ -707,10 +644,6 @@ footer {
   }
   .panel {
     padding: 21px;
-  }
-  .cover-art {
-    height: 235px;
-    margin: -14px -14px 16px;
   }
   .stats strong {
     font-size: 23px;
